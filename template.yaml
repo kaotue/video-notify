@@ -14,8 +14,8 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub vn-${Stage}-batch-function
-      CodeUri: src/batch
-      Handler: app.lambda_handler
+      CodeUri: src/
+      Handler: app_batch.lambda_handler
       Runtime: python3.9
       Architectures:
         - arm64
@@ -36,8 +36,8 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub vn-${Stage}-webhook-function
-      CodeUri: src/webhook
-      Handler: app.lambda_handler
+      CodeUri: src/
+      Handler: app_webhook.lambda_handler
       Runtime: python3.9
       Architectures:
         - arm64
@@ -92,6 +92,5 @@ Outputs:
     Value: !GetAtt VnBatchFunction.Arn
   VnWebHookFunction:
     Value: !GetAtt VnWebHookFunction.Arn
-#  VnWebHookFunctionUrl:
-#    Description: "Function URLs endpoint"
-#    Value: !GetAtt VnWebHookFunction.FunctionUrl
+  VnWebHookFunctionUrl:
+    Value: !GetAtt VnWebHookFunctionUrl.FunctionUrl

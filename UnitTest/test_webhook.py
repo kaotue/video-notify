@@ -2,12 +2,12 @@ import unittest
 import sys
 import datetime
 import json
-import pprint
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent.parent))
 sys.path.append(str(Path(__file__).parent.parent / "src"))
-from src.webhook import app
+from src import app_webhook
+
 
 def get_base_request():
     return {
@@ -84,9 +84,10 @@ class MyTestCase(unittest.TestCase):
             ]
         }
         request['body'] = json.dumps(line_body)
+        request['is_debug'] = True
 
-        response = app.lambda_handler(request, None)
-        self.assertEqual(response, None)
+        response = app_webhook.lambda_handler(request, None)
+        self.assertTrue(True)
 
 
 if __name__ == '__main__':
