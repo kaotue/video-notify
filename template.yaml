@@ -1,0 +1,97 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: An AWS Serverless Specification template describing your function.
+Globals:
+  Function:
+    Timeout: 3
+Parameters:
+  Stage:
+    Type: String
+  LineChannelAccessToken:
+    Type: String
+Resources:
+  VnBatchFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub vn-${Stage}-batch-function
+      CodeUri: src/batch
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      Architectures:
+        - arm64
+      Timeout: 300
+      MemorySize: 256
+      Environment:
+        Variables:
+          API_VERSION: !Ref Stage
+          TABLE_NAME: !Ref VnTable
+          LINE_CHANNEL_ACCESS_TOKEN: !Ref LineChannelAccessToken
+      Events:
+        VnSchedule:
+          Type: Schedule
+          Properties:
+            Schedule: 'cron(0 * * * ? *)'
+            Enabled: true
+  VnWebHookFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub vn-${Stage}-webhook-function
+      CodeUri: src/webhook
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      Architectures:
+        - arm64
+      Timeout: 5
+      MemorySize: 256
+      Environment:
+        Variables:
+          API_VERSION: !Ref Stage
+          TABLE_NAME: !Ref VnTable
+          LINE_CHANNEL_ACCESS_TOKEN: !Ref LineChannelAccessToken
+      FunctionUrlConfig:
+        AuthType: NONE
+  VnTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub vn-${Stage}-table
+      AttributeDefinitions:
+      - AttributeName: "id"
+        AttributeType: "S"
+      - AttributeName: "sub_id"
+        AttributeType: "S"
+      KeySchema:
+      - AttributeName: "id"
+        KeyType: "HASH"
+      - AttributeName: "sub_id"
+        KeyType: "RANGE"
+      ProvisionedThroughput:
+        ReadCapacityUnits: 2
+        WriteCapacityUnits: 2
+  ConnectorBatchFunctionToTable:
+    Type: AWS::Serverless::Connector
+    Properties:
+      Source:
+        Id: VnBatchFunction
+      Destination:
+        Id: VnTable
+      Permissions:
+        - Read
+        - Write
+  ConnectorWebHookFunctionToTable:
+    Type: AWS::Serverless::Connector
+    Properties:
+      Source:
+        Id: VnWebHookFunction
+      Destination:
+        Id: VnTable
+      Permissions:
+        - Read
+        - Write
+Outputs:
+  VnBatchFunction:
+    Value: !GetAtt VnBatchFunction.Arn
+  VnWebHookFunction:
+    Value: !GetAtt VnWebHookFunction.Arn
+#  VnWebHookFunctionUrl:
+#    Description: "Function URLs endpoint"
+#    Value: !GetAtt VnWebHookFunction.FunctionUrl
